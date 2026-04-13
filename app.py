@@ -622,10 +622,12 @@ class LoginFrame(ttk.Frame):
         form = ttk.Frame(self, style="LoginInner.TFrame")
         form.grid(row=0, column=2, sticky="nsew", padx=(32, 24))
         form.columnconfigure(0, weight=1)
+        self.form = form
 
         header = ttk.Frame(form, style="LoginHeader.TFrame")
         header.grid(row=0, column=0, sticky="we")
         header.columnconfigure(0, weight=1)
+        self.header = header
         self.title_lbl = ttk.Label(header, text="S3 GoSimply Manager", style="LoginTitle.TLabel", anchor="w", wraplength=0)
         self.title_lbl.grid(row=0, column=0, sticky="we")
         # Removed moon toggle for a cleaner header
@@ -679,6 +681,7 @@ class LoginFrame(ttk.Frame):
         buttons.grid(row=11, column=0, sticky="we", pady=(12, 12), padx=(0, 12))
         buttons.columnconfigure(0, weight=1, minsize=320)
         buttons.columnconfigure(1, weight=0, minsize=120)
+        self.buttons_row = buttons
         try:
             buttons.rowconfigure(0, minsize=52)
             buttons.configure(padding=(0, 0, 12, 0))
@@ -730,6 +733,7 @@ class LoginFrame(ttk.Frame):
         self.after(100, self.username_entry.focus_set)
         self.username_var.trace_add("write", lambda *_: self._on_username_change())
         self.password_var.trace_add("write", lambda *_: self._on_password_change())
+        form.bind("<Configure>", self._on_form_resize)
 
     def _refresh_usernames(self):
         # Do not auto‑fill usernames; keep the field empty for privacy
@@ -753,7 +757,7 @@ class LoginFrame(ttk.Frame):
             self.toggle_btn.config(text="Back to sign in ↩")
             try:
                 self.primary_btn.configure(text="Register & Sign In")
-                self.primary_btn.configure(width=26)
+                self.primary_btn.configure(width=22)
             except Exception:
                 pass
             self.confirm_label.grid(row=7, column=0, sticky="w", pady=(8, 0))
@@ -764,6 +768,10 @@ class LoginFrame(ttk.Frame):
         self._update_hero()
         self._on_username_change()
         self._on_password_change()
+        try:
+            self.after(0, lambda: self._on_form_resize(type("Evt", (), {"width": self.form.winfo_width()})()))
+        except Exception:
+            pass
 
     def _toggle_mode(self):
         self.mode = "register" if self.mode == "login" else "login"
@@ -909,9 +917,36 @@ class LoginFrame(ttk.Frame):
 
     def _set_title_wrap(self, width):
         try:
-            self.title_lbl.config(wraplength=0)
+            self.title_lbl.config(wraplength=max(220, int(width) - 40))
         except Exception:
             pass
+
+    def _relayout_buttons(self, width):
+        compact = int(width) < 520
+        if getattr(self, "_buttons_compact", None) == compact:
+            return
+        self._buttons_compact = compact
+        try:
+            if compact:
+                self.buttons_row.columnconfigure(0, weight=1, minsize=0)
+                self.buttons_row.columnconfigure(1, weight=1, minsize=0)
+                self.primary_btn.grid_configure(row=0, column=0, columnspan=2, sticky="we", padx=(0, 0), pady=(0, 10))
+                self.quit_btn.grid_configure(row=1, column=0, columnspan=2, sticky="we", padx=(0, 0), pady=(0, 4))
+            else:
+                self.buttons_row.columnconfigure(0, weight=1, minsize=320)
+                self.buttons_row.columnconfigure(1, weight=0, minsize=120)
+                self.primary_btn.grid_configure(row=0, column=0, columnspan=1, sticky="we", padx=(0, 0), pady=(0, 0))
+                self.quit_btn.grid_configure(row=0, column=1, columnspan=1, sticky="e", padx=(14, 8), pady=(0, 4))
+        except Exception:
+            pass
+
+    def _on_form_resize(self, event):
+        try:
+            width = max(event.width, self.form.winfo_width(), self.form.winfo_reqwidth())
+        except Exception:
+            width = 480
+        self._set_title_wrap(width)
+        self._relayout_buttons(width)
 
     def _toggle_theme(self):
         global _initial_settings
