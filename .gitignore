@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+build/
+dist/
+
+.pytest_cache/
+.mypy_cache/
+
+codesign.pfx
+*.log
