@@ -641,6 +641,7 @@ class LoginFrame(ttk.Frame):
         self.username_var = tk.StringVar()
         user_field = RoundedField(form, textvariable=self.username_var, height=44, always_glow=True, max_width=INPUT_MAX_WIDTH)
         user_field.grid(row=4, column=0, sticky="we", pady=(8, 22))
+        self.user_field = user_field
         self.username_entry = user_field.entry
         self.username_status = ttk.Label(user_field.trailing_holder, text="", style="LoginCheckIcon.TLabel")
         self.username_status.pack(side="right")
@@ -649,6 +650,7 @@ class LoginFrame(ttk.Frame):
         self.password_var = tk.StringVar()
         pass_field = RoundedField(form, textvariable=self.password_var, show="•", height=44, always_glow=True, max_width=INPUT_MAX_WIDTH)
         pass_field.grid(row=6, column=0, sticky="we", pady=(8, 10))
+        self.pass_field = pass_field
         self.password_entry = pass_field.entry
         self.password_toggle = ttk.Label(pass_field.trailing_holder, text="Show", style="LoginLink.TLabel", anchor="center", padding=(0,0,0,0))
         self.password_toggle.bind("<Button-1>", lambda *_: self._toggle_password_visibility())
@@ -692,6 +694,7 @@ class LoginFrame(ttk.Frame):
         self.keep_signed_var = tk.BooleanVar(value=False)
         keep_row = ttk.Frame(form, style="LoginInner.TFrame")
         keep_row.grid(row=12, column=0, sticky="w", pady=(6, 0))
+        self.keep_row = keep_row
         ttk.Checkbutton(keep_row, text="Keep me signed in", variable=self.keep_signed_var, style="Section.TCheckbutton").pack(side="left")
 
         self.primary_btn = RoundedButton(
@@ -723,7 +726,8 @@ class LoginFrame(ttk.Frame):
         self.toggle_btn.bind("<Button-1>", lambda *_: self._toggle_mode())
 
         self.footnote_var = tk.StringVar()
-        ttk.Label(form, textvariable=self.footnote_var, style="LoginFootnote.TLabel").grid(row=14, column=0, sticky="w", pady=(10, 0))
+        self.footnote_lbl = ttk.Label(form, textvariable=self.footnote_var, style="LoginFootnote.TLabel")
+        self.footnote_lbl.grid(row=14, column=0, sticky="w", pady=(10, 0))
 
         self.bind_all("<Return>", lambda *_: self._submit())
         self.bind_all("<Escape>", lambda *_: self.on_cancel())
@@ -945,15 +949,29 @@ class LoginFrame(ttk.Frame):
             width = max(event.width, self.form.winfo_width(), self.form.winfo_reqwidth())
         except Exception:
             width = 480
+        try:
+            window_height = max(self.winfo_toplevel().winfo_height(), self.form.winfo_height(), 1)
+        except Exception:
+            window_height = 800
         self._set_title_wrap(width)
         self._relayout_buttons(width)
         try:
-            compact = int(width) < 560
-            very_compact = int(width) < 460
-            self.title_lbl.configure(font=("SF Pro Display", 28 if compact else 36, "bold"))
-            self.subtitle_lbl.grid_configure(pady=((8, 12) if compact else (12, 18)))
-            self.welcome_lbl.grid_configure(pady=((0, 14) if compact else (0, 22)))
+            compact = int(width) < 560 or int(window_height) < 760
+            very_compact = int(width) < 460 or int(window_height) < 700
+            self.title_lbl.configure(font=("SF Pro Display", 26 if compact else 36, "bold"))
+            self.subtitle_lbl.grid_configure(pady=((6, 10) if compact else (12, 18)))
+            self.welcome_lbl.grid_configure(pady=((0, 10) if compact else (0, 22)))
+            self.user_field.grid_configure(pady=((6, 14) if compact else (8, 22)))
+            self.pass_field.grid_configure(pady=((6, 8) if compact else (8, 10)))
+            if self.confirm_label.winfo_manager():
+                self.confirm_label.grid_configure(pady=((6, 0) if compact else (8, 0)))
+            if self.confirm_row.winfo_manager():
+                self.confirm_row.grid_configure(pady=((6, 10) if compact else (8, 14)))
+            self.strength_canvas.grid_configure(pady=((6, 8) if compact else (8, 12)))
+            self.buttons_row.grid_configure(pady=((10, 8) if compact else (12, 12)))
+            self.keep_row.grid_configure(pady=((4, 0) if compact else (6, 0)))
             self.toggle_btn.grid_configure(pady=((6, 0) if compact else (8, 0)))
+            self.footnote_lbl.grid_configure(pady=((6, 0) if compact else (10, 0)))
             if very_compact:
                 self.footnote_var.set("")
             else:
