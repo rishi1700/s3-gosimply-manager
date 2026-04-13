@@ -763,6 +763,7 @@ class LoginFrame(ttk.Frame):
         self._refresh_usernames()
         self._update_mode()
         self.after(100, self.username_entry.focus_set)
+        self.after(150, self._sync_form_canvas)
         self.username_var.trace_add("write", lambda *_: self._on_username_change())
         self.password_var.trace_add("write", lambda *_: self._on_password_change())
         form.bind("<Configure>", self._on_form_resize, add="+")
@@ -802,6 +803,7 @@ class LoginFrame(ttk.Frame):
             self.after(0, lambda: self._on_form_resize(type("Evt", (), {"width": self.form.winfo_width()})()))
         except Exception:
             pass
+        self.after(150, self._sync_form_canvas)
 
     def _toggle_mode(self):
         self.mode = "register" if self.mode == "login" else "login"
