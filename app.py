@@ -678,9 +678,9 @@ class LoginFrame(ttk.Frame):
         self.message_label.grid(row=10, column=0, sticky="we", pady=(2, 0))
 
         buttons = ttk.Frame(form, style="LoginInner.TFrame")
-        buttons.grid(row=11, column=0, sticky="we", pady=(12, 12), padx=(0, 12))
+        buttons.grid(row=11, column=0, sticky="we", pady=(12, 12), padx=(0, 0))
         buttons.columnconfigure(0, weight=1, minsize=320)
-        buttons.columnconfigure(1, weight=0, minsize=120)
+        buttons.columnconfigure(1, weight=0, minsize=108)
         self.buttons_row = buttons
         try:
             buttons.rowconfigure(0, minsize=52)
@@ -711,10 +711,10 @@ class LoginFrame(ttk.Frame):
             pass
 
         self.quit_btn = ttk.Button(buttons, text="Quit", style="GhostSmall.TButton", command=self.on_cancel)
-        self.quit_btn.grid(row=0, column=1, sticky="e", padx=(14, 8), pady=(0, 4))
+        self.quit_btn.grid(row=0, column=1, sticky="we", padx=(14, 0), pady=(0, 4))
         try:
             # Prevent truncation of Quit text on Windows
-            self.quit_btn.configure(width=14)
+            self.quit_btn.configure(width=12)
         except Exception:
             pass
 
@@ -934,9 +934,9 @@ class LoginFrame(ttk.Frame):
                 self.quit_btn.grid_configure(row=1, column=0, columnspan=2, sticky="we", padx=(0, 0), pady=(0, 4))
             else:
                 self.buttons_row.columnconfigure(0, weight=1, minsize=320)
-                self.buttons_row.columnconfigure(1, weight=0, minsize=120)
+                self.buttons_row.columnconfigure(1, weight=0, minsize=108)
                 self.primary_btn.grid_configure(row=0, column=0, columnspan=1, sticky="we", padx=(0, 0), pady=(0, 0))
-                self.quit_btn.grid_configure(row=0, column=1, columnspan=1, sticky="e", padx=(14, 8), pady=(0, 4))
+                self.quit_btn.grid_configure(row=0, column=1, columnspan=1, sticky="we", padx=(14, 0), pady=(0, 4))
         except Exception:
             pass
 
