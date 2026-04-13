@@ -642,7 +642,7 @@ class LoginFrame(ttk.Frame):
         self.form_scroll = form_scroll
         self.form_scroll.grid_remove()
 
-        form = ttk.Frame(form_canvas, style="LoginInner.TFrame")
+        form = ttk.Frame(form_canvas, style="LoginForm.TFrame")
         form.columnconfigure(0, weight=1)
         self.form = form
         self.form_window = form_canvas.create_window((0, 0), window=form, anchor="nw")
@@ -659,15 +659,15 @@ class LoginFrame(ttk.Frame):
         self.title_lbl.grid(row=0, column=0, sticky="we")
         # Removed moon toggle for a cleaner header
         self.subtitle_lbl = ttk.Label(form, text="", style="LoginSubtitle.TLabel")
-        self.subtitle_lbl.grid(row=1, column=0, sticky="w", pady=(12, 18))
+        self.subtitle_lbl.grid(row=1, column=0, sticky="w", pady=(4, 8))
 
         self.welcome_lbl = ttk.Label(form, text="👋 Welcome back, operator", style="LoginWelcome.TLabel")
-        self.welcome_lbl.grid(row=2, column=0, sticky="w", pady=(0, 22))
+        self.welcome_lbl.grid(row=2, column=0, sticky="w", pady=(0, 8))
 
         ttk.Label(form, text="Username", style="LoginLabel.TLabel").grid(row=3, column=0, sticky="w")
         self.username_var = tk.StringVar()
         user_field = RoundedField(form, textvariable=self.username_var, height=44, always_glow=True, max_width=INPUT_MAX_WIDTH)
-        user_field.grid(row=4, column=0, sticky="we", pady=(8, 22))
+        user_field.grid(row=4, column=0, sticky="we", pady=(6, 10))
         self.user_field = user_field
         self.username_entry = user_field.entry
         self.username_status = ttk.Label(user_field.trailing_holder, text="", style="LoginCheckIcon.TLabel")
@@ -676,7 +676,7 @@ class LoginFrame(ttk.Frame):
         ttk.Label(form, text="Password", style="LoginLabel.TLabel").grid(row=5, column=0, sticky="w")
         self.password_var = tk.StringVar()
         pass_field = RoundedField(form, textvariable=self.password_var, show="•", height=44, always_glow=True, max_width=INPUT_MAX_WIDTH)
-        pass_field.grid(row=6, column=0, sticky="we", pady=(8, 10))
+        pass_field.grid(row=6, column=0, sticky="we", pady=(6, 8))
         self.pass_field = pass_field
         self.password_entry = pass_field.entry
         self.password_toggle = ttk.Label(pass_field.trailing_holder, text="Show", style="LoginLink.TLabel", anchor="center", padding=(0,0,0,0))
@@ -700,14 +700,14 @@ class LoginFrame(ttk.Frame):
             bd=0,
             background=THEME_PALETTE.get("SURFACE", "#111318"),
         )
-        self.strength_canvas.grid(row=9, column=0, sticky="we", pady=(8, 12))
+        self.strength_canvas.grid(row=9, column=0, sticky="we", pady=(4, 6))
 
         self.message_var = tk.StringVar()
         self.message_label = ttk.Label(form, textvariable=self.message_var, style="LoginMessage.TLabel")
         self.message_label.grid(row=10, column=0, sticky="we", pady=(2, 0))
 
-        buttons = ttk.Frame(form, style="LoginInner.TFrame")
-        buttons.grid(row=11, column=0, sticky="we", pady=(12, 12), padx=(0, 0))
+        buttons = ttk.Frame(form, style="LoginShell.TFrame")
+        buttons.grid(row=11, column=0, sticky="we", pady=(8, 6), padx=(0, 0))
         buttons.columnconfigure(0, weight=1, minsize=320)
         buttons.columnconfigure(1, weight=0, minsize=108)
         self.buttons_row = buttons
@@ -719,8 +719,8 @@ class LoginFrame(ttk.Frame):
 
         # Keep me signed in
         self.keep_signed_var = tk.BooleanVar(value=False)
-        keep_row = ttk.Frame(form, style="LoginInner.TFrame")
-        keep_row.grid(row=12, column=0, sticky="w", pady=(6, 0))
+        keep_row = ttk.Frame(form, style="LoginShell.TFrame")
+        keep_row.grid(row=12, column=0, sticky="w", pady=(4, 0))
         self.keep_row = keep_row
         ttk.Checkbutton(keep_row, text="Keep me signed in", variable=self.keep_signed_var, style="Section.TCheckbutton").pack(side="left")
 
@@ -749,7 +749,7 @@ class LoginFrame(ttk.Frame):
             pass
 
         self.toggle_btn = ttk.Label(form, text="", style="LoginLink.TLabel", cursor="hand2")
-        self.toggle_btn.grid(row=13, column=0, sticky="w", pady=(8, 0))
+        self.toggle_btn.grid(row=13, column=0, sticky="w", pady=(4, 0))
         self.toggle_btn.bind("<Button-1>", lambda *_: self._toggle_mode())
 
         self.footnote_var = tk.StringVar()
@@ -792,8 +792,8 @@ class LoginFrame(ttk.Frame):
                 self.primary_btn.configure(width=22)
             except Exception:
                 pass
-            self.confirm_label.grid(row=7, column=0, sticky="w", pady=(8, 0))
-            self.confirm_row.grid(row=8, column=0, sticky="we", pady=(8, 14))
+            self.confirm_label.grid(row=7, column=0, sticky="w", pady=(4, 0))
+            self.confirm_row.grid(row=8, column=0, sticky="we", pady=(4, 8))
             self.subtitle_lbl.config(text="Create a secure account.")
         self.message_var.set("")
         self._update_hero()
@@ -828,10 +828,23 @@ class LoginFrame(ttk.Frame):
 
     def _sync_form_canvas(self, _event=None):
         try:
-            self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
+            canvas_h = max(self.form_canvas.winfo_height(), 1)
+            self._apply_spacing(canvas_h)
         except Exception:
             pass
+        self.after(0, self._do_scroll_check)
+
+    def _on_form_canvas_configure(self, event):
         try:
+            self.form_canvas.itemconfigure(self.form_window, width=event.width)
+            self._apply_spacing(event.height)
+        except Exception:
+            pass
+        self.after(0, self._do_scroll_check)
+
+    def _do_scroll_check(self):
+        try:
+            self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
             canvas_h = max(self.form_canvas.winfo_height(), 1)
             needs_scroll = self.form.winfo_reqheight() > max(canvas_h - 4, 1)
             if needs_scroll:
@@ -841,19 +854,6 @@ class LoginFrame(ttk.Frame):
                 self.form_canvas.yview_moveto(0)
         except Exception:
             pass
-
-    def _on_form_canvas_configure(self, event):
-        try:
-            self.form_canvas.itemconfigure(self.form_window, width=event.width)
-            needs_scroll = self.form.winfo_reqheight() > max(event.height - 4, 1)
-            if needs_scroll:
-                self.form_scroll.grid()
-            else:
-                self.form_scroll.grid_remove()
-                self.form_canvas.yview_moveto(0)
-        except Exception:
-            pass
-        self._sync_form_canvas()
 
     def _on_form_mousewheel(self, event):
         try:
@@ -1028,32 +1028,53 @@ class LoginFrame(ttk.Frame):
             width = max(event.width, self.form.winfo_width(), self.form.winfo_reqwidth())
         except Exception:
             width = 480
-        try:
-            canvas_h = self.form_canvas.winfo_height()
-            if canvas_h < 10:
-                canvas_h = max(self.winfo_toplevel().winfo_height(), self.form.winfo_height(), 1)
-        except Exception:
-            canvas_h = 800
         self._set_title_wrap(width)
         self._relayout_buttons(width)
+
+    def _apply_spacing(self, canvas_h):
+        """Scale form spacing to fill available canvas height without overflowing."""
+        if canvas_h < 10:
+            return
+        generous = canvas_h >= 640
+        very_generous = canvas_h >= 750
+        key = (generous, very_generous)
+        if getattr(self, "_last_spacing_key", None) == key:
+            return
+        self._last_spacing_key = key
+
+        if very_generous:
+            font_size = 32
+            spad = (10, 16); wpad = (0, 18)
+            ufpad = (8, 18); pfpad = (8, 10)
+            clpad = (8, 0); crpad = (6, 12)
+            strpad = (6, 10); bpad = (12, 10)
+            kpad = (8, 0); tpad = (8, 0)
+        elif generous:
+            font_size = 28
+            spad = (6, 12); wpad = (0, 12)
+            ufpad = (6, 14); pfpad = (6, 8)
+            clpad = (6, 0); crpad = (4, 10)
+            strpad = (4, 8); bpad = (10, 8)
+            kpad = (6, 0); tpad = (6, 0)
+        else:
+            # Small canvas — keep compact defaults set in __init__; only fix font
+            self.title_lbl.configure(font=("SF Pro Display", 22, "bold"))
+            return
+
         try:
-            compact = int(width) < 560 or int(canvas_h) < 700
-            very_compact = int(width) < 460 or int(canvas_h) < 560
-            self.title_lbl.configure(font=("SF Pro Display", 26 if compact else 36, "bold"))
-            self.subtitle_lbl.grid_configure(pady=((6, 10) if compact else (12, 18)))
-            self.welcome_lbl.grid_configure(pady=((0, 10) if compact else (0, 22)))
-            self.user_field.grid_configure(pady=((6, 14) if compact else (8, 22)))
-            self.pass_field.grid_configure(pady=((6, 8) if compact else (8, 10)))
+            self.title_lbl.configure(font=("SF Pro Display", font_size, "bold"))
+            self.subtitle_lbl.grid_configure(pady=spad)
+            self.welcome_lbl.grid_configure(pady=wpad)
+            self.user_field.grid_configure(pady=ufpad)
+            self.pass_field.grid_configure(pady=pfpad)
             if self.confirm_label.winfo_manager():
-                self.confirm_label.grid_configure(pady=((6, 0) if compact else (8, 0)))
+                self.confirm_label.grid_configure(pady=clpad)
             if self.confirm_row.winfo_manager():
-                self.confirm_row.grid_configure(pady=((6, 8) if compact else (8, 12)))
-            self.strength_canvas.grid_configure(pady=((6, 8) if compact else (8, 12)))
-            self.message_label.grid_configure(pady=((2, 0) if compact else (4, 0)))
-            self.buttons_row.grid_configure(pady=((8, 6) if compact else (12, 12)))
-            self.keep_row.grid_configure(pady=((2, 0) if compact else (6, 0)))
-            self.toggle_btn.grid_configure(pady=((4, 0) if compact else (8, 0)))
-            self.footnote_var.set("")
+                self.confirm_row.grid_configure(pady=crpad)
+            self.strength_canvas.grid_configure(pady=strpad)
+            self.buttons_row.grid_configure(pady=bpad)
+            self.keep_row.grid_configure(pady=kpad)
+            self.toggle_btn.grid_configure(pady=tpad)
         except Exception:
             pass
 
@@ -2320,8 +2341,9 @@ def apply_theme(root):
         font=FONT_BADGE,
         padding=(14, 6),
     )
-    # Slightly tighter top/bottom padding to fit footnotes
     style.configure("LoginInner.TFrame", background=SURFACE, padding=(40, 64, 56, 56))
+    # Form panel: horizontal indent only — vertical spacing is applied dynamically
+    style.configure("LoginForm.TFrame", background=SURFACE, padding=(40, 20, 40, 20))
     style.configure("LoginHeader.TFrame", background=SURFACE)
     style.configure("LoginTitle.TLabel", background=SURFACE, foreground=TEXT, font=("SF Pro Display", 36, "bold"), wraplength=0, justify="left")
     style.configure("LoginToggle.TLabel", background=_blend_hex(SURFACE, BG, 0.12 if dark else 0.04), foreground=_blend_hex(SUBTLE, "#ffffff", 0.1), font=FONT_ICON, padding=(10,8))
