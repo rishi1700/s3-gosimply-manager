@@ -49,5 +49,7 @@ if [[ ! -f "${DIST_BIN}" ]]; then
   exit 1
 fi
 
+chmod +x "${DIST_BIN}"
+
 echo
 echo "Done. Final Linux app file: ${DIST_BIN}"
