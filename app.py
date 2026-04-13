@@ -728,6 +728,7 @@ class LoginFrame(ttk.Frame):
         self.footnote_var = tk.StringVar()
         self.footnote_lbl = ttk.Label(form, textvariable=self.footnote_var, style="LoginFootnote.TLabel")
         self.footnote_lbl.grid(row=14, column=0, sticky="w", pady=(10, 0))
+        self.footnote_lbl.grid_remove()
 
         self.bind_all("<Return>", lambda *_: self._submit())
         self.bind_all("<Escape>", lambda *_: self.on_cancel())
@@ -756,7 +757,6 @@ class LoginFrame(ttk.Frame):
             if self.confirm_row.winfo_manager():
                 self.confirm_row.grid_remove()
             self.subtitle_lbl.config(text="Sign in with your workspace credentials to continue.")
-            self.footnote_var.set("Having trouble? Ask an administrator to reset your local credentials.")
         else:
             self.toggle_btn.config(text="Back to sign in ↩")
             try:
@@ -767,7 +767,6 @@ class LoginFrame(ttk.Frame):
             self.confirm_label.grid(row=7, column=0, sticky="w", pady=(8, 0))
             self.confirm_row.grid(row=8, column=0, sticky="we", pady=(8, 14))
             self.subtitle_lbl.config(text="Create a secure account.")
-            self.footnote_var.set("Passwords must be at least 8 characters. We hash them locally with PBKDF2 before storing.")
         self.message_var.set("")
         self._update_hero()
         self._on_username_change()
@@ -966,19 +965,13 @@ class LoginFrame(ttk.Frame):
             if self.confirm_label.winfo_manager():
                 self.confirm_label.grid_configure(pady=((6, 0) if compact else (8, 0)))
             if self.confirm_row.winfo_manager():
-                self.confirm_row.grid_configure(pady=((6, 10) if compact else (8, 14)))
+                self.confirm_row.grid_configure(pady=((6, 8) if compact else (8, 12)))
             self.strength_canvas.grid_configure(pady=((6, 8) if compact else (8, 12)))
-            self.buttons_row.grid_configure(pady=((10, 8) if compact else (12, 12)))
-            self.keep_row.grid_configure(pady=((4, 0) if compact else (6, 0)))
-            self.toggle_btn.grid_configure(pady=((6, 0) if compact else (8, 0)))
-            self.footnote_lbl.grid_configure(pady=((6, 0) if compact else (10, 0)))
-            if very_compact:
-                self.footnote_var.set("")
-            else:
-                if self.mode == "login":
-                    self.footnote_var.set("Having trouble? Ask an administrator to reset your local credentials.")
-                else:
-                    self.footnote_var.set("Passwords must be at least 8 characters. We hash them locally with PBKDF2 before storing.")
+            self.message_label.grid_configure(pady=((2, 0) if compact else (4, 0)))
+            self.buttons_row.grid_configure(pady=((8, 6) if compact else (12, 12)))
+            self.keep_row.grid_configure(pady=((2, 0) if compact else (6, 0)))
+            self.toggle_btn.grid_configure(pady=((4, 0) if compact else (8, 0)))
+            self.footnote_var.set("")
         except Exception:
             pass
 
