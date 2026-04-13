@@ -635,7 +635,7 @@ class LoginFrame(ttk.Frame):
         form_canvas.grid(row=0, column=0, sticky="nsew")
         self.form_canvas = form_canvas
 
-        form_scroll = ttk.Scrollbar(form_shell, orient="vertical", command=form_canvas.yview)
+        form_scroll = ttk.Scrollbar(form_shell, orient="vertical", command=form_canvas.yview, style="Login.Vertical.TScrollbar")
         form_scroll.grid(row=0, column=1, sticky="ns", padx=(10, 0))
         form_canvas.configure(yscrollcommand=form_scroll.set)
         self.form_scroll = form_scroll
@@ -2342,6 +2342,27 @@ def apply_theme(root):
     )
     divider_bg = _blend_hex(SURFACE, hero_top, 0.24 if dark else 0.16)
     style.configure("LoginCardDivider.TFrame", background=divider_bg, width=2)
+    login_scroll_trough = _blend_hex(SURFACE, BG, 0.18 if dark else 0.08)
+    login_scroll_thumb = _blend_hex(ACCENT, SURFACE, 0.56 if dark else 0.42)
+    login_scroll_thumb_active = _blend_hex(ACCENT_GLOW, SURFACE, 0.44 if dark else 0.28)
+    style.configure(
+        "Login.Vertical.TScrollbar",
+        background=login_scroll_thumb,
+        troughcolor=login_scroll_trough,
+        bordercolor=login_scroll_trough,
+        darkcolor=login_scroll_trough,
+        lightcolor=login_scroll_trough,
+        arrowcolor=login_scroll_trough,
+        arrowsize=0,
+        gripcount=0,
+        relief="flat",
+        borderwidth=0,
+        width=10,
+    )
+    style.map(
+        "Login.Vertical.TScrollbar",
+        background=[("active", login_scroll_thumb_active), ("pressed", ACCENT)],
+    )
     # Footnote can be long; allow wider wrapping so it doesn't cut off
     style.configure("LoginFootnote.TLabel", background=SURFACE, foreground=_blend_hex(SUBTLE, TEXT, 0.6), font=FONT_SMALL,
                     wraplength=520, justify="left")
