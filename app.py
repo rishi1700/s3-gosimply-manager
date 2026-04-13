@@ -947,6 +947,22 @@ class LoginFrame(ttk.Frame):
             width = 480
         self._set_title_wrap(width)
         self._relayout_buttons(width)
+        try:
+            compact = int(width) < 560
+            very_compact = int(width) < 460
+            self.title_lbl.configure(font=("SF Pro Display", 28 if compact else 36, "bold"))
+            self.subtitle_lbl.grid_configure(pady=((8, 12) if compact else (12, 18)))
+            self.welcome_lbl.grid_configure(pady=((0, 14) if compact else (0, 22)))
+            self.toggle_btn.grid_configure(pady=((6, 0) if compact else (8, 0)))
+            if very_compact:
+                self.footnote_var.set("")
+            else:
+                if self.mode == "login":
+                    self.footnote_var.set("Having trouble? Ask an administrator to reset your local credentials.")
+                else:
+                    self.footnote_var.set("Passwords must be at least 8 characters. We hash them locally with PBKDF2 before storing.")
+        except Exception:
+            pass
 
     def _toggle_theme(self):
         global _initial_settings
