@@ -628,13 +628,13 @@ class LoginFrame(ttk.Frame):
         header.grid(row=0, column=0, sticky="we")
         header.columnconfigure(0, weight=1)
         self.header = header
-        self.title_lbl = ttk.Label(header, text="S3 GoSimply Manager", style="LoginTitle.TLabel", anchor="w", wraplength=0)
+        self.title_lbl = ttk.Label(header, text="Welcome Back", style="LoginTitle.TLabel", anchor="w", wraplength=0)
         self.title_lbl.grid(row=0, column=0, sticky="we")
         # Removed moon toggle for a cleaner header
-        self.subtitle_lbl = ttk.Label(form, text="", style="LoginSubtitle.TLabel")
+        self.subtitle_lbl = ttk.Label(form, text="S3 GoSimply Manager", style="LoginSubtitle.TLabel")
         self.subtitle_lbl.grid(row=1, column=0, sticky="w", pady=(12, 18))
 
-        self.welcome_lbl = ttk.Label(form, text="👋 Welcome back, operator", style="LoginWelcome.TLabel")
+        self.welcome_lbl = ttk.Label(form, text="Sign in to continue managing storage.", style="LoginWelcome.TLabel")
         self.welcome_lbl.grid(row=2, column=0, sticky="w", pady=(0, 22))
 
         ttk.Label(form, text="Username", style="LoginLabel.TLabel").grid(row=3, column=0, sticky="w")
@@ -723,7 +723,7 @@ class LoginFrame(ttk.Frame):
         self.toggle_btn.bind("<Button-1>", lambda *_: self._toggle_mode())
 
         self.footnote_var = tk.StringVar()
-        ttk.Label(form, textvariable=self.footnote_var, style="LoginFootnote.TLabel").grid(row=14, column=0, sticky="w", pady=(10, 0))
+        ttk.Label(form, textvariable=self.footnote_var, style="LoginFootnote.TLabel").grid(row=14, column=0, sticky="w", pady=(8, 0))
 
         self.bind_all("<Return>", lambda *_: self._submit())
         self.bind_all("<Escape>", lambda *_: self.on_cancel())
@@ -853,62 +853,47 @@ class LoginFrame(ttk.Frame):
         self._paint_hero_text()
 
     def _paint_hero_text(self):
-        """Lay out hero copy directly on the canvas so the gradient fill stays visible."""
+        """Render a decorative-only hero so auth messaging stays in the form panel."""
         c = self.hero_canvas
         if not c:
             return
         c.delete("hero_text")
 
-        pad = 28
         w = max(c.winfo_width(), 1)
-        # Badge
-        badge_bg = _blend(THEME_PALETTE.get("ACCENT", "#4c8df6"), "#ffffff", 0.18)
-        badge_fg = _blend(THEME_PALETTE.get("ACCENT", "#4c8df6"), "#000000", 0.15)
-        # Draw a small rounded pill for the badge
-        bx1, by1, bx2, by2, br = pad, pad, min(w - pad, pad + 160), pad + 32, 12
-        c.create_rectangle(bx1+br, by1, bx2-br, by2, fill=badge_bg, outline="", tags="hero_text")
-        c.create_arc(bx1, by1, bx1+2*br, by2, start=90, extent=180, style="pieslice", fill=badge_bg, outline="", tags="hero_text")
-        c.create_arc(bx2-2*br, by1, bx2, by2, start=270, extent=180, style="pieslice", fill=badge_bg, outline="", tags="hero_text")
-        c.create_text(bx1+14, by1+16, anchor="w", text="S3 GOSIMPLY OPS", fill="#f5f7ff",
-                      font=("SF Pro Text", 10, "bold"), tags="hero_text")
+        h = max(c.winfo_height(), 1)
+        accent = THEME_PALETTE.get("ACCENT", "#4c8df6")
+        soft = _blend(accent, "#ffffff", 0.35)
+        mist = _blend(accent, "#ffffff", 0.72)
+        shadow = _blend(accent, "#0b1020", 0.55)
+        panel_fill = _blend(accent, "#0c1324", 0.68)
+        line_fill = _blend("#ffffff", accent, 0.45)
 
-        # Title
-        title_y = by2 + 28
-        self._hero_title_id = c.create_text(
-            pad, title_y, anchor="nw", width=w - pad*2,
-            text=self._hero_title_text, fill=THEME_PALETTE.get("TEXT", "#e6ebf3"),
-            font=("SF Pro Display", 36, "bold"), tags="hero_text"
-        )
+        c.create_oval(w * 0.10, h * 0.08, w * 0.52, h * 0.42, fill=soft, outline="", stipple="gray25", tags="hero_text")
+        c.create_oval(w * 0.44, h * 0.20, w * 0.92, h * 0.78, fill=mist, outline="", stipple="gray25", tags="hero_text")
+        c.create_oval(w * 0.18, h * 0.56, w * 0.48, h * 0.90, fill=shadow, outline="", stipple="gray25", tags="hero_text")
 
-        # Summary
-        sum_y = c.bbox(self._hero_title_id)[3] + 18 if self._hero_title_id else title_y + 60
-        self._hero_summary_id = c.create_text(
-            pad, sum_y, anchor="nw", width=w - pad*2,
-            text=self._hero_summary_text,
-            fill=_blend(THEME_PALETTE.get("SUBTLE", "#9aa3b2"), THEME_PALETTE.get("TEXT", "#e6ebf3"), 0.45),
-            font=("SF Pro Text", 12), tags="hero_text"
-        )
+        panel_x1 = int(w * 0.16)
+        panel_y1 = int(h * 0.20)
+        panel_x2 = int(w * 0.78)
+        panel_y2 = int(h * 0.74)
+        c.create_rectangle(panel_x1, panel_y1, panel_x2, panel_y2, outline="", fill=panel_fill, stipple="gray50", tags="hero_text")
 
-        # Bullets
-        y = c.bbox(self._hero_summary_id)[3] + 16 if self._hero_summary_id else sum_y + 40
-        self._hero_point_ids = []
-        for i, line in enumerate(self._hero_points_text):
-            item = c.create_text(
-                pad, y, anchor="nw", width=w - pad*2,
-                text=f"• {line}",
-                fill=_blend(THEME_PALETTE.get("SUBTLE", "#9aa3b2"), THEME_PALETTE.get("TEXT", "#e6ebf3"), 0.55),
-                font=("SF Pro Text", 12), tags="hero_text"
+        for index, width_factor in enumerate((0.72, 0.54, 0.80, 0.62)):
+            y = panel_y1 + 42 + index * 66
+            c.create_rectangle(
+                panel_x1 + 34,
+                y,
+                panel_x1 + int((panel_x2 - panel_x1) * width_factor),
+                y + 10,
+                outline="",
+                fill=line_fill,
+                stipple="gray50",
+                tags="hero_text",
             )
-            self._hero_point_ids.append(item)
-            y = c.bbox(item)[3] + 10
+            c.create_oval(panel_x2 - 62, y - 6, panel_x2 - 26, y + 28, outline="", fill=soft, stipple="gray50", tags="hero_text")
 
-        # Footer
-        self._hero_footer_id = c.create_text(
-            pad, y + 18, anchor="nw", width=w - pad*2,
-            text=self._hero_footer_text,
-            fill=_blend(THEME_PALETTE.get("SUBTLE", "#9aa3b2"), THEME_PALETTE.get("TEXT", "#e6ebf3"), 0.65),
-            font=("SF Pro Text", 11), tags="hero_text"
-        )
+        c.create_rectangle(int(w * 0.12), int(h * 0.82), int(w * 0.48), int(h * 0.84), outline="", fill=mist, stipple="gray50", tags="hero_text")
+        c.create_rectangle(int(w * 0.54), int(h * 0.82), int(w * 0.70), int(h * 0.84), outline="", fill=soft, stipple="gray50", tags="hero_text")
 
     @staticmethod
     def _hex_to_rgb(value):
@@ -991,34 +976,16 @@ class LoginFrame(ttk.Frame):
 
     def _update_hero(self):
         if self.mode == "login":
-            self._hero_title_text = "Welcome back.\nReady to deploy?"
-            self._hero_summary_text = "Manage S3 GoSimply storage from one desktop — no shell needed."
-            self._hero_points_text = [
-                "Upload files and folders with resumable progress.",
-                "Download objects with auto‑retry and metrics.",
-                "List buckets & objects; filter and inspect metadata.",
-                "Delete objects or entire buckets with safety checks.",
-            ]
-            self._hero_footer_text = "Configure endpoints, credentials, and defaults in Settings."
+            self.title_lbl.config(text="Welcome Back")
+            self.subtitle_lbl.config(text="S3 GoSimply Manager")
+            self.welcome_lbl.config(text="Sign in to continue managing storage.")
         else:
-            self._hero_title_text = "Welcome.\nReady to deploy?"
-            self._hero_summary_text = "Create an account to begin. Then manage S3 GoSimply storage from one desktop — no shell needed."
-            self._hero_points_text = [
-                "Upload files and folders with resumable progress.",
-                "Download objects with auto‑retry and metrics.",
-                "List buckets & objects; filter and inspect metadata.",
-                "Delete objects or entire buckets with safety checks.",
-            ]
-            self._hero_footer_text = "Configure endpoints, credentials, and defaults in Settings."
-        # Repaint texts onto the canvas
+            self.title_lbl.config(text="Create Account")
+            self.subtitle_lbl.config(text="S3 GoSimply Manager")
+            self.welcome_lbl.config(text="Set up your workspace account to get started.")
         self._paint_hero_text()
 
     def _on_username_change(self):
-        # Keep messaging generic; do not display the typed username
-        if self.mode == "login":
-            self.welcome_lbl.config(text="👋 Welcome back")
-        else:
-            self.welcome_lbl.config(text="🛡️ Create your account")
         username = self.username_var.get().strip()
         self.username_status.config(text="✓" if username else "")
 
