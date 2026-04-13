@@ -619,10 +619,36 @@ class LoginFrame(ttk.Frame):
         divider = ttk.Frame(self, style="LoginCardDivider.TFrame", width=1)
         divider.grid(row=0, column=1, sticky="ns", pady=36, padx=(0, 0))
 
-        form = ttk.Frame(self, style="LoginInner.TFrame")
-        form.grid(row=0, column=2, sticky="nsew", padx=(32, 24))
+        form_shell = ttk.Frame(self, style="LoginInner.TFrame")
+        form_shell.grid(row=0, column=2, sticky="nsew", padx=(32, 24))
+        form_shell.columnconfigure(0, weight=1)
+        form_shell.rowconfigure(0, weight=1)
+        self.form_shell = form_shell
+
+        form_canvas = tk.Canvas(
+            form_shell,
+            highlightthickness=0,
+            bd=0,
+            background=THEME_PALETTE.get("SURFACE", "#111318"),
+            yscrollincrement=24,
+        )
+        form_canvas.grid(row=0, column=0, sticky="nsew")
+        self.form_canvas = form_canvas
+
+        form_scroll = ttk.Scrollbar(form_shell, orient="vertical", command=form_canvas.yview)
+        form_scroll.grid(row=0, column=1, sticky="ns", padx=(10, 0))
+        form_canvas.configure(yscrollcommand=form_scroll.set)
+        self.form_scroll = form_scroll
+        self.form_scroll.grid_remove()
+
+        form = ttk.Frame(form_canvas, style="LoginInner.TFrame")
         form.columnconfigure(0, weight=1)
         self.form = form
+        self.form_window = form_canvas.create_window((0, 0), window=form, anchor="nw")
+        form.bind("<Configure>", self._sync_form_canvas)
+        form_canvas.bind("<Configure>", self._on_form_canvas_configure)
+        form_canvas.bind("<Enter>", self._bind_form_mousewheel)
+        form_canvas.bind("<Leave>", self._unbind_form_mousewheel)
 
         header = ttk.Frame(form, style="LoginHeader.TFrame")
         header.grid(row=0, column=0, sticky="we")
@@ -738,7 +764,7 @@ class LoginFrame(ttk.Frame):
         self.after(100, self.username_entry.focus_set)
         self.username_var.trace_add("write", lambda *_: self._on_username_change())
         self.password_var.trace_add("write", lambda *_: self._on_password_change())
-        form.bind("<Configure>", self._on_form_resize)
+        form.bind("<Configure>", self._on_form_resize, add="+")
 
     def _refresh_usernames(self):
         # Do not auto‑fill usernames; keep the field empty for privacy
@@ -796,6 +822,47 @@ class LoginFrame(ttk.Frame):
         # Redraw the background and reflow the canvas text
         self._draw_hero_gradient()
         self._paint_hero_text()
+
+    def _sync_form_canvas(self, _event=None):
+        try:
+            self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
+        except Exception:
+            pass
+
+    def _on_form_canvas_configure(self, event):
+        try:
+            self.form_canvas.itemconfigure(self.form_window, width=event.width)
+            needs_scroll = self.form.winfo_reqheight() > max(event.height - 4, 1)
+            if needs_scroll:
+                self.form_scroll.grid()
+            else:
+                self.form_scroll.grid_remove()
+                self.form_canvas.yview_moveto(0)
+        except Exception:
+            pass
+        self._sync_form_canvas()
+
+    def _on_form_mousewheel(self, event):
+        try:
+            delta = event.delta
+            if delta == 0:
+                return
+            step = -1 if delta > 0 else 1
+            self.form_canvas.yview_scroll(step, "units")
+        except Exception:
+            pass
+
+    def _bind_form_mousewheel(self, _event=None):
+        try:
+            self.form_canvas.bind_all("<MouseWheel>", self._on_form_mousewheel)
+        except Exception:
+            pass
+
+    def _unbind_form_mousewheel(self, _event=None):
+        try:
+            self.form_canvas.unbind_all("<MouseWheel>")
+        except Exception:
+            pass
 
     def _draw_hero_gradient(self):
         canvas = getattr(self, "hero_canvas", None)
