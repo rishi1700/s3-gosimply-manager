@@ -620,7 +620,7 @@ class LoginFrame(ttk.Frame):
         divider = ttk.Frame(self, style="LoginCardDivider.TFrame", width=1)
         divider.grid(row=0, column=1, sticky="ns", pady=36, padx=(0, 0))
 
-        form_shell = ttk.Frame(self, style="LoginInner.TFrame")
+        form_shell = ttk.Frame(self, style="LoginShell.TFrame")
         form_shell.grid(row=0, column=2, sticky="nsew", padx=(32, 24))
         form_shell.columnconfigure(0, weight=1)
         form_shell.rowconfigure(0, weight=1)
@@ -827,6 +827,16 @@ class LoginFrame(ttk.Frame):
     def _sync_form_canvas(self, _event=None):
         try:
             self.form_canvas.configure(scrollregion=self.form_canvas.bbox("all"))
+        except Exception:
+            pass
+        try:
+            canvas_h = max(self.form_canvas.winfo_height(), 1)
+            needs_scroll = self.form.winfo_reqheight() > max(canvas_h - 4, 1)
+            if needs_scroll:
+                self.form_scroll.grid()
+            else:
+                self.form_scroll.grid_remove()
+                self.form_canvas.yview_moveto(0)
         except Exception:
             pass
 
