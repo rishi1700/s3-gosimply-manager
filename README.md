@@ -51,25 +51,26 @@ Go to the **Settings** tab and fill in your storage details.
 
 | Field | What to enter |
 |---|---|
-| Endpoint URL | Leave blank (the app uses AWS automatically) |
+| Provider | Select **AWS** |
 | Access Key | Your AWS Access Key ID |
 | Secret Key | Your AWS Secret Access Key |
 | Region | The region your bucket is in, e.g. `us-east-1` |
-| Bucket | The name of your S3 bucket |
 
 ### For MinIO
 
 | Field | What to enter |
 |---|---|
+| Provider | Select **MinIO / Custom** |
 | Endpoint URL | Your MinIO server address, e.g. `http://192.168.1.10:9000` |
 | Access Key | Your MinIO access key |
 | Secret Key | Your MinIO secret key |
 | Region | Can be anything, e.g. `us-east-1` |
-| Bucket | The name of your bucket |
 
 Click **Save Settings** when done.
 
 > Don't have these details? For AWS, find them in the AWS Console under **IAM → Users → Security credentials**. For MinIO, ask whoever set up your MinIO server.
+
+> **Note:** The bucket name is not entered in Settings — you type it directly in each tab when you upload, download, list, or delete.
 
 ---
 
