@@ -1029,14 +1029,16 @@ class LoginFrame(ttk.Frame):
         except Exception:
             width = 480
         try:
-            window_height = max(self.winfo_toplevel().winfo_height(), self.form.winfo_height(), 1)
+            canvas_h = self.form_canvas.winfo_height()
+            if canvas_h < 10:
+                canvas_h = max(self.winfo_toplevel().winfo_height(), self.form.winfo_height(), 1)
         except Exception:
-            window_height = 800
+            canvas_h = 800
         self._set_title_wrap(width)
         self._relayout_buttons(width)
         try:
-            compact = int(width) < 560 or int(window_height) < 760
-            very_compact = int(width) < 460 or int(window_height) < 700
+            compact = int(width) < 560 or int(canvas_h) < 700
+            very_compact = int(width) < 460 or int(canvas_h) < 560
             self.title_lbl.configure(font=("SF Pro Display", 26 if compact else 36, "bold"))
             self.subtitle_lbl.grid_configure(pady=((6, 10) if compact else (12, 18)))
             self.welcome_lbl.grid_configure(pady=((0, 10) if compact else (0, 22)))
