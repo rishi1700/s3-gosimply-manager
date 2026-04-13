@@ -589,6 +589,7 @@ class LoginFrame(ttk.Frame):
         self._confirm_visible = False
 
         # --- HERO (full-height filled gradient panel) ------------------------
+        self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=0, minsize=520)   # fixed left panel
         self.columnconfigure(1, weight=0)
         self.columnconfigure(2, weight=1)
