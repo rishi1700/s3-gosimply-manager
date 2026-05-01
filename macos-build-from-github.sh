@@ -35,6 +35,40 @@ need_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
+python_is_usable() {
+  "$1" - <<'PY' >/dev/null 2>&1
+import ssl
+import sys
+import tkinter
+
+tk_version = tuple(int(part) for part in str(tkinter.TkVersion).split(".")[:2])
+if tk_version < (8, 6):
+    raise SystemExit(1)
+if "LibreSSL" in ssl.OPENSSL_VERSION:
+    raise SystemExit(1)
+if sys.executable == "/usr/bin/python3":
+    raise SystemExit(1)
+PY
+}
+
+choose_python_from_candidates() {
+  local candidate resolved
+  for candidate in "$@"; do
+    if [[ "${candidate}" == */* ]]; then
+      [[ -x "${candidate}" ]] || continue
+      resolved="${candidate}"
+    else
+      need_command "${candidate}" || continue
+      resolved="$(command -v "${candidate}")"
+    fi
+    if python_is_usable "${resolved}"; then
+      PYTHON_BIN="${resolved}"
+      return 0
+    fi
+  done
+  return 1
+}
+
 ensure_homebrew_if_requested() {
   if need_command brew; then
     return
@@ -55,8 +89,25 @@ ensure_homebrew_if_requested() {
 }
 
 select_python() {
-  if need_command python3 && python3 -c "import tkinter" >/dev/null 2>&1; then
-    PYTHON_BIN="$(command -v python3)"
+  if [[ -n "${PYTHON_BIN:-}" ]] && python_is_usable "${PYTHON_BIN}"; then
+    return
+  fi
+
+  if choose_python_from_candidates \
+    /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 \
+    /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 \
+    /Library/Frameworks/Python.framework/Versions/3.11/bin/python3 \
+    /opt/homebrew/bin/python3.13 \
+    /opt/homebrew/bin/python3.12 \
+    /opt/homebrew/bin/python3.11 \
+    /usr/local/bin/python3.13 \
+    /usr/local/bin/python3.12 \
+    /usr/local/bin/python3.11 \
+    python3.13 \
+    python3.12 \
+    python3.11 \
+    python3; then
+    echo "Using Python: ${PYTHON_BIN}"
     return
   fi
 
@@ -67,14 +118,13 @@ select_python() {
     brew install python@3.12 python-tk@3.12
     local brew_prefix
     brew_prefix="$(brew --prefix)"
-    if [[ -x "${brew_prefix}/opt/python@3.12/bin/python3.12" ]]; then
-      PYTHON_BIN="${brew_prefix}/opt/python@3.12/bin/python3.12"
+    if choose_python_from_candidates "${brew_prefix}/opt/python@3.12/bin/python3.12"; then
+      echo "Using Python: ${PYTHON_BIN}"
+      return
     fi
   fi
 
-  if [[ -z "${PYTHON_BIN:-}" ]] || ! "${PYTHON_BIN}" -c "import tkinter" >/dev/null 2>&1; then
-    die "Python 3 with Tkinter is required. Install Python from https://www.python.org/downloads/macos/ or rerun with INSTALL_HOMEBREW=1."
-  fi
+  die "Modern Python 3 with Tkinter and OpenSSL is required. Install Python from https://www.python.org/downloads/macos/ or rerun with INSTALL_HOMEBREW=1."
 }
 
 clone_or_update_repo() {
@@ -118,6 +168,7 @@ clone_or_update_repo() {
 build_app() {
   cd "${INSTALL_DIR}"
 
+  rm -rf .venv build dist
   "${PYTHON_BIN}" -m venv .venv
   # shellcheck disable=SC1091
   source .venv/bin/activate

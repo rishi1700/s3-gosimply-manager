@@ -25,8 +25,16 @@ fi
 source "${VENV_PATH}/bin/activate"
 
 python - <<'PY'
+import ssl
+import sys
 import tkinter
+print(f"Python executable: {sys.executable}")
 print(f"Tkinter available: Tk {tkinter.TkVersion}")
+print(f"SSL: {ssl.OPENSSL_VERSION}")
+if tuple(int(part) for part in str(tkinter.TkVersion).split(".")[:2]) < (8, 6):
+    raise SystemExit("Tk 8.6 or newer is required. Install Python from python.org or use Homebrew python-tk.")
+if "LibreSSL" in ssl.OPENSSL_VERSION:
+    raise SystemExit("Apple system Python/LibreSSL is not supported. Install Python from python.org or use Homebrew python-tk.")
 PY
 
 python -m pip install --upgrade pip

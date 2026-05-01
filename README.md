@@ -146,7 +146,7 @@ Make sure you click **Save Settings** before switching tabs. If the problem cont
 
 ## Build macOS App
 
-For a new Mac, install Python 3.11 or newer with Tkinter/Tcl-Tk support first. The simplest option is the official installer from [python.org](https://www.python.org/downloads/macos/).
+For a new Mac, install Python 3.11 or newer with Tkinter/Tcl-Tk support first. The simplest option is the official installer from [python.org](https://www.python.org/downloads/macos/). Do not build with Apple system Python from `/usr/bin/python3`; it uses deprecated system Tk and LibreSSL.
 
 Then run from source:
 
@@ -193,7 +193,7 @@ The script clones the repo into `~/s3-gosimply-manager`, installs Python depende
 
 If `~/s3-gosimply-manager` already exists from an earlier ZIP download, the script moves it to a timestamped backup folder before downloading a fresh copy.
 
-If the Mac does not already have Python with Tkinter, install Python from [python.org](https://www.python.org/downloads/macos/) first, or let the script use Homebrew:
+If the Mac does not already have modern Python with Tkinter, install Python from [python.org](https://www.python.org/downloads/macos/) first, or let the script use Homebrew:
 
 ```bash
 INSTALL_HOMEBREW=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rishi1700/s3-gosimply-manager/claude/fix-register-button-clipping-li1qZ/macos-build-from-github.sh)"
