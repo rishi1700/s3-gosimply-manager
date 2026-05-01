@@ -10,6 +10,7 @@ import textwrap
 import traceback
 from pathlib import Path
 from collections import deque
+from urllib.parse import urlparse
 
 def _startup_log_path():
     if sys.platform.startswith("darwin"):
@@ -2017,8 +2018,8 @@ def _update_transfer_meta(label, kind, name, transferred, total, avg_Bps, elapse
         return
     label.config(text=_format_transfer_meta(kind, name, transferred, total, avg_Bps, elapsed_sec, note))
 
-def _set_initial_window_size(win, preferred=(1280, 780), minimum=(960, 640), margin=40):
-    """Apply a compact default size while keeping the window resizable."""
+def _set_initial_window_size(win, preferred=(1440, 900), minimum=(1120, 760), margin=48):
+    """Apply a comfortable default size while keeping the window resizable."""
     min_w, min_h = minimum
     win.minsize(min_w, min_h)
     try:
@@ -2511,8 +2512,8 @@ _initial_settings = load_app_settings()
 # ---------------- GUI root ----------------
 root = tk.Tk()
 root.title("S3 GoSimply Manager")
-root.geometry("1280x780")
-root.minsize(960, 640)
+root.geometry("1440x900")
+root.minsize(1120, 760)
 _center_window(root)
 
 card, palette = apply_theme(root)
@@ -2533,7 +2534,7 @@ _refresh_header_info()
 create_dashboard(APP_BODY)
 
 root.update_idletasks()
-_set_initial_window_size(root, minimum=(960, 640))
+_set_initial_window_size(root, minimum=(1120, 760))
 root.deiconify()
 
 
@@ -2600,6 +2601,7 @@ if cfg_provider.get() == PROVIDER_MINIO and use_custom_flag is None:
     cfg_custom_endpoint.set(True)
     if not initial_endpoint:
         cfg_endpoint.set("127.0.0.1:9000")
+        cfg_secure.set(False)
 cfg_path_style = tk.BooleanVar(value=_settings_bool(_initial_settings.get("AWS_S3_PATH_STYLE"), False))
 cfg_show_secret = tk.BooleanVar(value=False)
 
@@ -3763,25 +3765,16 @@ def _update_endpoint_field(*_):
             cfg_endpoint.set("127.0.0.1:9000")
         hint_value = cfg_endpoint.get().strip()
         if not hint_value:
-            hint_value = "s3.<region>.amazonaws.com" if provider == PROVIDER_AWS else "play.min.io:9000"
-        prefix = "Server example" if provider == PROVIDER_MINIO else "Example"
-        s_endpoint_hint.config(text=f"{prefix}: {hint_value}", style="SectionHint.TLabel")
+            hint_value = "s3.<region>.amazonaws.com" if provider == PROVIDER_AWS else "http://127.0.0.1:9000"
+        if provider == PROVIDER_MINIO:
+            s_endpoint_hint.config(
+                text="Example: http://192.168.128.71:9000. Port 9001 is usually the MinIO web console, not the S3 API.",
+                style="SectionHint.TLabel",
+            )
+        else:
+            s_endpoint_hint.config(text=f"Example: {hint_value}", style="SectionHint.TLabel")
 
     _on_endpoint_change()
-
-
-def _on_endpoint_change(*_):
-    provider = cfg_provider.get()
-    endpoint = cfg_endpoint.get().strip()
-    ep_lower = endpoint.lower()
-    if provider == PROVIDER_MINIO:
-        if ep_lower.endswith(":9000") and cfg_secure.get():
-            cfg_secure.set(False)
-    elif provider == PROVIDER_AWS:
-        if not cfg_secure.get():
-            cfg_secure.set(True)
-    _validate_fields()
-
 
 def _on_provider_change(*_):
     provider = cfg_provider.get()
@@ -3824,7 +3817,7 @@ def _on_provider_change(*_):
             cfg_secret_key.set("")
             cfg_endpoint.set("")
             cfg_custom_endpoint.set(True)
-            cfg_secure.set(True)
+            cfg_secure.set(False)
         cfg_path_style.set(False)
         if not cfg_custom_endpoint.get():
             cfg_custom_endpoint.set(True)
@@ -3836,10 +3829,19 @@ def _on_provider_change(*_):
     layout_settings_form(_layout_state.get("settings_compact", False))
     _refresh_configuration_status()
 
-def _on_endpoint_change():
-    """Invoked by endpoint StringVar traces. Intentionally no-op so we do not
-    rebuild the Settings form while Tk is still processing widget changes."""
-    pass
+def _on_endpoint_change(*_):
+    provider = cfg_provider.get()
+    endpoint = cfg_endpoint.get().strip()
+    host_port, secure_override, _error = _parse_endpoint_input(endpoint)
+    if provider == PROVIDER_MINIO:
+        if secure_override is not None and cfg_secure.get() != secure_override:
+            cfg_secure.set(secure_override)
+        elif host_port.endswith(":9000") and cfg_secure.get():
+            cfg_secure.set(False)
+    elif provider == PROVIDER_AWS:
+        if not cfg_secure.get():
+            cfg_secure.set(True)
+    _validate_fields()
 
 def _set_test_status(message, style="StatusInfo.TLabel"):
     cfg_test_status.set(message)
@@ -3852,6 +3854,50 @@ def _set_test_status(message, style="StatusInfo.TLabel"):
 
 REGION_RE = re.compile(r"^[a-z]{2}-[a-z0-9-]+-\d+$")
 ENDPOINT_RE = re.compile(r"^[A-Za-z0-9.-]+(:\d+)?$")
+
+
+def _parse_endpoint_input(endpoint):
+    raw = (endpoint or "").strip()
+    if not raw:
+        return "", None, ""
+
+    secure_override = None
+    host_port = raw
+    if "://" in raw:
+        parsed = urlparse(raw)
+        scheme = parsed.scheme.lower()
+        if scheme not in ("http", "https"):
+            return "", None, "Endpoint must start with http:// or https://."
+        secure_override = scheme == "https"
+        host_port = parsed.netloc or parsed.path
+    else:
+        host_port = raw.split("/", 1)[0]
+
+    host_port = host_port.strip().rstrip("/")
+    if "@" in host_port:
+        host_port = host_port.rsplit("@", 1)[-1]
+    if not ENDPOINT_RE.match(host_port):
+        return host_port, secure_override, "Endpoint must be host[:port], e.g. 192.168.128.71:9000."
+    return host_port, secure_override, ""
+
+
+def _minio_endpoint_hint(endpoint, secure):
+    host_port, secure_override, error = _parse_endpoint_input(endpoint)
+    if error:
+        return error, "Error.TLabel"
+    if not host_port:
+        return "Server endpoint required, e.g. http://192.168.128.71:9000", "Error.TLabel"
+    if host_port.endswith(":9001"):
+        return (
+            "9001 is usually the MinIO web console. Use the S3 API port, usually "
+            f"{'https' if secure else 'http'}://{host_port[:-5]}:9000.",
+            "Error.TLabel",
+        )
+    protocol = "HTTPS" if secure else "HTTP"
+    example = f"{'https' if secure else 'http'}://{host_port}"
+    if secure_override is not None:
+        return f"✅ Server endpoint format looks good ({example}, {protocol})", "Success.TLabel"
+    return f"✅ Server endpoint format looks good ({host_port}, {protocol})", "Success.TLabel"
 
 
 def _validate_fields(*_):
@@ -3878,13 +3924,24 @@ def _validate_fields(*_):
     # Endpoint validation
     require_custom = (provider == PROVIDER_MINIO) or cfg_custom_endpoint.get()
     if require_custom:
-        valid_endpoint = bool(ENDPOINT_RE.match(endpoint))
+        normalized_endpoint, _secure_override, endpoint_error = _parse_endpoint_input(endpoint)
+        valid_endpoint = bool(normalized_endpoint and not endpoint_error)
+        if valid_endpoint and provider == PROVIDER_MINIO and normalized_endpoint.endswith(":9001"):
+            valid_endpoint = False
         if valid_endpoint:
-            label = "Server endpoint" if provider == PROVIDER_MINIO else "Endpoint"
-            s_endpoint_hint.config(text=f"✅ {label} format looks good ({endpoint or ''})", style="Success.TLabel")
+            if provider == PROVIDER_MINIO:
+                hint, style_name = _minio_endpoint_hint(endpoint, cfg_secure.get())
+                s_endpoint_hint.config(text=hint, style=style_name)
+            else:
+                s_endpoint_hint.config(text=f"✅ Endpoint format looks good ({normalized_endpoint})", style="Success.TLabel")
         else:
             label = "Server endpoint" if provider == PROVIDER_MINIO else "Endpoint"
-            s_endpoint_hint.config(text=f"🔴 {label} must be host[:port] (e.g., play.min.io:9000)", style="Error.TLabel")
+            if provider == PROVIDER_MINIO:
+                hint, style_name = _minio_endpoint_hint(endpoint, cfg_secure.get())
+                s_endpoint_hint.config(text=hint, style=style_name)
+            else:
+                detail = endpoint_error or "Endpoint must be host[:port] (e.g., s3.us-east-1.amazonaws.com)."
+                s_endpoint_hint.config(text=f"🔴 {label}: {detail}", style="Error.TLabel")
     else:
         # AWS with derived endpoint from region
         if provider == PROVIDER_AWS:
@@ -3953,13 +4010,19 @@ def _collect_settings():
     region = cfg_region.get().strip()
     provider = cfg_provider.get()
     use_custom = (provider == PROVIDER_MINIO) or cfg_custom_endpoint.get()
-    endpoint_val = cfg_endpoint.get().strip() if use_custom else ""
+    raw_endpoint = cfg_endpoint.get().strip() if use_custom else ""
+    endpoint_val, secure_override, _endpoint_error = _parse_endpoint_input(raw_endpoint)
+    if not endpoint_val and raw_endpoint:
+        endpoint_val = raw_endpoint
+    secure_value = cfg_secure.get()
+    if provider == PROVIDER_MINIO and secure_override is not None:
+        secure_value = secure_override
     return {
         "AWS_REGION": region,
         "AWS_ACCESS_KEY_ID": cfg_access_key.get().strip(),
         "AWS_SECRET_ACCESS_KEY": cfg_secret_key.get().strip(),
         "AWS_S3_ENDPOINT": endpoint_val,
-        "AWS_S3_SECURE": "true" if cfg_secure.get() else "false",
+        "AWS_S3_SECURE": "true" if secure_value else "false",
         "PROVIDER": provider,
         "USE_CUSTOM_ENDPOINT": use_custom,
         "AWS_S3_PATH_STYLE": "true" if cfg_path_style.get() else "false",
@@ -3972,9 +4035,9 @@ def _effective_endpoint(settings):
     endpoint = (settings.get("AWS_S3_ENDPOINT") or "").strip()
     use_custom = bool(settings.get("USE_CUSTOM_ENDPOINT"))
     if provider == PROVIDER_MINIO:
-        return endpoint
+        return _parse_endpoint_input(endpoint)[0]
     if endpoint:
-        return endpoint
+        return _parse_endpoint_input(endpoint)[0]
     if not use_custom and provider == PROVIDER_AWS and region:
         return _default_endpoint(region)
     return ""
@@ -4047,6 +4110,11 @@ def _on_settings_save():
         _set_test_status("")
         _validate_fields()
         return None
+    if provider == PROVIDER_MINIO and data.get("AWS_S3_ENDPOINT", "").endswith(":9001"):
+        _set_test_status("🔴 Use the MinIO S3 API port, usually 9000. Port 9001 is usually the web console.", "Error.TLabel")
+        statusbar.config(text="Cannot save: MinIO endpoint appears to use the console port.")
+        _validate_fields()
+        return None
 
     data = _persist_settings()
     timestamp = time.strftime("%a %H:%M")
@@ -4072,6 +4140,11 @@ def _on_settings_test():
     missing = [label for label, key in required_fields if not data.get(key)]
     if missing:
         _set_test_status("🟠 Missing values: " + ", ".join(missing), "Error.TLabel")
+        statusbar.config(text="Connection test failed.")
+        _validate_fields()
+        return
+    if provider == PROVIDER_MINIO and data.get("AWS_S3_ENDPOINT", "").endswith(":9001"):
+        _set_test_status("🔴 Port 9001 is usually the MinIO web console. Test the S3 API endpoint, usually http://host:9000.", "Error.TLabel")
         statusbar.config(text="Connection test failed.")
         _validate_fields()
         return
@@ -4126,7 +4199,13 @@ def _on_settings_test():
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             bucket_count = len(buckets)
         except Exception as exc:
-            _set_test_status(f"🔴 Connection failed: {_truncate_middle(str(exc), 120)}", "Error.TLabel")
+            error_text = str(exc)
+            if provider == PROVIDER_MINIO and "WRONG_VERSION_NUMBER" in error_text.upper():
+                error_text = (
+                    "TLS/HTTP mismatch. Use http:// for non-TLS MinIO, disable HTTPS, "
+                    "and make sure you are using the S3 API port, usually 9000 rather than console port 9001."
+                )
+            _set_test_status(f"🔴 Connection failed: {_truncate_middle(error_text, 140)}", "Error.TLabel")
             statusbar.config(text="Connection test failed.")
         else:
             count_text = "no buckets" if bucket_count == 0 else f"{bucket_count} bucket{'s' if bucket_count != 1 else ''}"
