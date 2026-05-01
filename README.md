@@ -202,3 +202,15 @@ Useful options:
 ```bash
 BRANCH=claude/fix-register-button-clipping-li1qZ INSTALL_DIR="$HOME/Apps/s3-gosimply-manager" LAUNCH_APP=0 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rishi1700/s3-gosimply-manager/claude/fix-register-button-clipping-li1qZ/macos-build-from-github.sh)"
 ```
+
+If the app opens to a blank window, rerun the bootstrap in debug launch mode from Terminal:
+
+```bash
+DEBUG_LAUNCH=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rishi1700/s3-gosimply-manager/claude/fix-register-button-clipping-li1qZ/macos-build-from-github.sh)"
+```
+
+Then check the startup log:
+
+```bash
+cat "$HOME/Library/Logs/S3_GoSimply_Manager.log"
+```

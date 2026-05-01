@@ -7,8 +7,56 @@ import threading
 import subprocess
 import re
 import textwrap
+import traceback
 from pathlib import Path
 from collections import deque
+
+def _startup_log_path():
+    if sys.platform.startswith("darwin"):
+        return Path.home() / "Library" / "Logs" / "S3_GoSimply_Manager.log"
+    return Path.home() / ".s3_minio_manager" / "S3_GoSimply_Manager.log"
+
+def _append_startup_log(message):
+    try:
+        path = _startup_log_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(message.rstrip() + "\n")
+    except Exception:
+        pass
+
+def _handle_uncaught_exception(exc_type, exc, tb):
+    detail = "".join(traceback.format_exception(exc_type, exc, tb))
+    _append_startup_log(
+        "\n=== Uncaught exception "
+        + time.strftime("%Y-%m-%d %H:%M:%S")
+        + " ===\n"
+        + detail
+    )
+    try:
+        print(detail, file=sys.stderr)
+    except Exception:
+        pass
+    try:
+        import tkinter as _tk
+        from tkinter import messagebox as _messagebox
+        _err_root = _tk.Tk()
+        _err_root.withdraw()
+        _messagebox.showerror(
+            "S3 GoSimply Manager startup error",
+            "The app hit a startup error. Details were written to:\n\n"
+            + str(_startup_log_path()),
+            parent=_err_root,
+        )
+        _err_root.destroy()
+    except Exception:
+        pass
+
+sys.excepthook = _handle_uncaught_exception
+if hasattr(threading, "excepthook"):
+    def _handle_thread_exception(args):
+        _handle_uncaught_exception(args.exc_type, args.exc_value, args.exc_traceback)
+    threading.excepthook = _handle_thread_exception
 
 class UploadCancelled(Exception):
     """Raised when a user cancels an active upload."""

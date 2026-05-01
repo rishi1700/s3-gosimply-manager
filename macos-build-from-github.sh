@@ -13,6 +13,7 @@ set -euo pipefail
 #   BRANCH=claude/fix-register-button-clipping-li1qZ
 #   INSTALL_DIR="$HOME/s3-gosimply-manager"
 #   LAUNCH_APP=1
+#   DEBUG_LAUNCH=0
 #   INSTALL_HOMEBREW=0
 # ------------------------------------------------------------
 
@@ -21,6 +22,7 @@ REPO_ZIP_URL="${REPO_ZIP_URL:-https://github.com/rishi1700/s3-gosimply-manager/a
 BRANCH="${BRANCH:-claude/fix-register-button-clipping-li1qZ}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/s3-gosimply-manager}"
 LAUNCH_APP="${LAUNCH_APP:-1}"
+DEBUG_LAUNCH="${DEBUG_LAUNCH:-0}"
 INSTALL_HOMEBREW="${INSTALL_HOMEBREW:-0}"
 APP_NAME="S3_GoSimply_Manager"
 
@@ -131,7 +133,12 @@ build_app() {
 
 launch_app() {
   if [[ "${LAUNCH_APP}" == "1" ]]; then
-    open "${INSTALL_DIR}/dist/${APP_NAME}.app"
+    if [[ "${DEBUG_LAUNCH}" == "1" ]]; then
+      echo "Launching in debug mode. Close the app window to return to the shell."
+      S3_MANAGER_DEBUG=1 "${INSTALL_DIR}/dist/${APP_NAME}.app/Contents/MacOS/${APP_NAME}"
+    else
+      open "${INSTALL_DIR}/dist/${APP_NAME}.app"
+    fi
   fi
 }
 
@@ -145,3 +152,4 @@ echo
 echo "Done."
 echo "Project: ${INSTALL_DIR}"
 echo "App: ${INSTALL_DIR}/dist/${APP_NAME}.app"
+echo "Log: $HOME/Library/Logs/S3_GoSimply_Manager.log"
