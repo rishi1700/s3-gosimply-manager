@@ -3333,7 +3333,7 @@ TAB_LABELS = [
     (settings_tab, "⚙️ Settings", "⚙️ Settings"),
 ]
 
-s_callout = ttk.Frame(s_card, style="AccentCallout.TFrame", padding=(18,16))
+s_callout = ttk.Frame(s_card, style="AccentCallout.TFrame", padding=(16,12))
 s_callout.grid_columnconfigure(1, weight=1)
 s_callout_icon = ttk.Label(s_callout, text="🛠️", style="AccentCalloutIcon.TLabel")
 s_callout_title = ttk.Label(s_callout, text="Connection Settings", style="AccentCalloutTitle.TLabel")
@@ -3348,7 +3348,7 @@ s_callout_title.grid(row=0, column=1, sticky="w")
 s_callout_text.grid(row=1, column=1, sticky="we")
 s_callout.pack(fill="x", pady=(PADY, PADY))
 
-s_form_section = ttk.Frame(s_card, style="Section.TFrame", padding=(18,16))
+s_form_section = ttk.Frame(s_card, style="Section.TFrame", padding=(16,12))
 s_form_section.grid_columnconfigure(0, weight=0)
 s_form_section.grid_columnconfigure(1, weight=2)
 s_form_section.grid_columnconfigure(2, weight=1)
@@ -3535,11 +3535,17 @@ def layout_settings_form(compact=False):
         s_form_section.grid_columnconfigure(2, weight=1)
 
     row = 0
-    s_form_title.grid(row=row, column=0, columnspan=3, sticky="w")
+    if compact:
+        s_form_title.grid(row=row, column=0, columnspan=3, sticky="w")
+        row += 1
+        s_actions.grid(row=row, column=0, columnspan=3, sticky="ew", pady=(6, 8))
+    else:
+        s_form_title.grid(row=row, column=0, sticky="w")
+        s_actions.grid(row=row, column=1, columnspan=2, sticky="e")
     row += 1
-    s_form_hint.grid(row=row, column=0, columnspan=3, sticky="we", pady=(4, 12))
+    s_form_hint.grid(row=row, column=0, columnspan=3, sticky="we", pady=(4, 8))
     row += 1
-    s_form_sep.grid(row=row, column=0, columnspan=3, sticky="we", pady=(0, 16))
+    s_form_sep.grid(row=row, column=0, columnspan=3, sticky="we", pady=(0, 12))
     row += 1
 
     def add_row(label=None, control=None, hint=None, *, full=False, pady=(0, 4), control_sticky="we"):
@@ -3612,7 +3618,6 @@ def layout_settings_form(compact=False):
     else:
         path_style_row.grid_remove()
         https_row.grid_remove()
-    s_actions.grid(row=row, column=0, columnspan=3, sticky="ew", pady=(16, 0))
 
 def grid_config(frame, cols):
     try:
