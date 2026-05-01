@@ -176,3 +176,29 @@ Notes:
 
 - The app uses Tkinter, so the Python installation must include working Tcl/Tk support.
 - Unsigned local builds may be blocked by Gatekeeper on another Mac. For distribution, sign and notarize the `.app` with an Apple Developer ID certificate.
+
+## Build macOS App From GitHub
+
+On a new Mac where the code has not been copied locally, run the bootstrap script from GitHub:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rishi1700/s3-gosimply-manager/claude/fix-register-button-clipping-li1qZ/macos-build-from-github.sh)"
+```
+
+The script clones the repo into `~/s3-gosimply-manager`, installs Python dependencies, builds the app bundle, and launches:
+
+```bash
+~/s3-gosimply-manager/dist/S3_GoSimply_Manager.app
+```
+
+If the Mac does not already have Python with Tkinter, install Python from [python.org](https://www.python.org/downloads/macos/) first, or let the script use Homebrew:
+
+```bash
+INSTALL_HOMEBREW=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rishi1700/s3-gosimply-manager/claude/fix-register-button-clipping-li1qZ/macos-build-from-github.sh)"
+```
+
+Useful options:
+
+```bash
+BRANCH=claude/fix-register-button-clipping-li1qZ INSTALL_DIR="$HOME/Apps/s3-gosimply-manager" LAUNCH_APP=0 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/rishi1700/s3-gosimply-manager/claude/fix-register-button-clipping-li1qZ/macos-build-from-github.sh)"
+```
