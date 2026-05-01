@@ -165,10 +165,28 @@ clone_or_update_repo() {
   mv "${extracted_dir}" "${INSTALL_DIR}"
 }
 
+reset_build_path() {
+  local path backup_path
+  path="$1"
+  [[ -e "${path}" ]] || return
+
+  if rm -rf "${path}" 2>/dev/null; then
+    return
+  fi
+
+  backup_path="${path}.stale-$(date +%Y%m%d-%H%M%S)"
+  echo "Could not remove ${path}; moving it to ${backup_path}"
+  if ! mv "${path}" "${backup_path}"; then
+    die "Could not reset ${path}. Close S3 GoSimply Manager and any Finder windows showing this folder, then rerun the script."
+  fi
+}
+
 build_app() {
   cd "${INSTALL_DIR}"
 
-  rm -rf .venv build dist
+  reset_build_path .venv
+  reset_build_path build
+  reset_build_path dist
   "${PYTHON_BIN}" -m venv .venv
   # shellcheck disable=SC1091
   source .venv/bin/activate
