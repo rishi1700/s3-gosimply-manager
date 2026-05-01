@@ -141,3 +141,38 @@ The local account is stored in a file called `auth.db` in the app folder. Delete
 
 **Settings not saving**
 Make sure you click **Save Settings** before switching tabs. If the problem continues, close and reopen the app.
+
+---
+
+## Build macOS App
+
+For a new Mac, install Python 3.11 or newer with Tkinter/Tcl-Tk support first. The simplest option is the official installer from [python.org](https://www.python.org/downloads/macos/).
+
+Then run from source:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python app.py
+```
+
+PyInstaller builds are platform-specific, so build this on macOS for macOS. Apple Silicon and Intel builds should be produced on the matching architecture unless you set up a universal build separately.
+
+```bash
+chmod +x ./build-macos.sh
+bash ./build-macos.sh
+open ./dist/S3_GoSimply_Manager.app
+```
+
+The final macOS app bundle is written to:
+
+```bash
+./dist/S3_GoSimply_Manager.app
+```
+
+Notes:
+
+- The app uses Tkinter, so the Python installation must include working Tcl/Tk support.
+- Unsigned local builds may be blocked by Gatekeeper on another Mac. For distribution, sign and notarize the `.app` with an Apple Developer ID certificate.
