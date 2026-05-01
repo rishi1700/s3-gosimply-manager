@@ -12,13 +12,74 @@ DIST_APP="./dist/${APP_NAME}.app"
 SPEC_PATH="./build/macos-spec"
 HIDDEN_IMPORTS=(minio urllib3 tqdm PIL)
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 not found. Install Python 3 from python.org or Homebrew and try again." >&2
+python_is_usable() {
+  "$1" - <<'PY' >/dev/null 2>&1
+import ssl
+import sys
+import tkinter
+
+tk_version = tuple(int(part) for part in str(tkinter.TkVersion).split(".")[:2])
+if tk_version < (8, 6):
+    raise SystemExit(1)
+if "LibreSSL" in ssl.OPENSSL_VERSION:
+    raise SystemExit(1)
+if sys.executable == "/usr/bin/python3":
+    raise SystemExit(1)
+PY
+}
+
+choose_python_from_candidates() {
+  local candidate resolved
+  for candidate in "$@"; do
+    if [[ "${candidate}" == */* ]]; then
+      [[ -x "${candidate}" ]] || continue
+      resolved="${candidate}"
+    else
+      command -v "${candidate}" >/dev/null 2>&1 || continue
+      resolved="$(command -v "${candidate}")"
+    fi
+    if python_is_usable "${resolved}"; then
+      PYTHON_BIN="${resolved}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [[ -n "${PYTHON_BIN:-}" ]]; then
+  if ! python_is_usable "${PYTHON_BIN}"; then
+    echo "PYTHON_BIN is set but is not usable for this macOS build: ${PYTHON_BIN}" >&2
+    exit 1
+  fi
+elif ! choose_python_from_candidates \
+  /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 \
+  /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 \
+  /Library/Frameworks/Python.framework/Versions/3.11/bin/python3 \
+  /opt/homebrew/bin/python3.13 \
+  /opt/homebrew/bin/python3.12 \
+  /opt/homebrew/bin/python3.11 \
+  /usr/local/bin/python3.13 \
+  /usr/local/bin/python3.12 \
+  /usr/local/bin/python3.11 \
+  python3.13 \
+  python3.12 \
+  python3.11 \
+  python3; then
+  echo "Modern Python 3 with Tk 8.6+ and OpenSSL is required." >&2
+  echo "Install Python from https://www.python.org/downloads/macos/ or run:" >&2
+  echo "  brew install python@3.12 python-tk@3.12" >&2
   exit 1
 fi
 
+echo "Using Python: ${PYTHON_BIN}"
+
+if [[ -x "${VENV_PATH}/bin/python" ]] && ! python_is_usable "${VENV_PATH}/bin/python"; then
+  echo "Existing ${VENV_PATH} was created with an unsupported Python; recreating it."
+  rm -rf "${VENV_PATH}"
+fi
+
 if [[ ! -d "${VENV_PATH}" ]]; then
-  python3 -m venv "${VENV_PATH}"
+  "${PYTHON_BIN}" -m venv "${VENV_PATH}"
 fi
 
 # shellcheck disable=SC1091
