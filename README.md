@@ -191,6 +191,8 @@ The script clones the repo into `~/s3-gosimply-manager`, installs Python depende
 ~/s3-gosimply-manager/dist/S3_GoSimply_Manager.app
 ```
 
+If `~/s3-gosimply-manager` already exists from an earlier ZIP download, the script moves it to a timestamped backup folder before downloading a fresh copy.
+
 If the Mac does not already have Python with Tkinter, install Python from [python.org](https://www.python.org/downloads/macos/) first, or let the script use Homebrew:
 
 ```bash

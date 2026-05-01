@@ -88,7 +88,10 @@ clone_or_update_repo() {
   fi
 
   if [[ -e "${INSTALL_DIR}" ]]; then
-    die "INSTALL_DIR exists but is not a Git checkout: ${INSTALL_DIR}"
+    local backup_dir
+    backup_dir="${INSTALL_DIR}.backup-$(date +%Y%m%d-%H%M%S)"
+    echo "Existing non-Git install found at ${INSTALL_DIR}; moving it to ${backup_dir}"
+    mv "${INSTALL_DIR}" "${backup_dir}"
   fi
 
   if need_command git; then
